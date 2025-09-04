@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portal Upload</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Courier New', monospace;
+            background: #0a0a0a;
+            color: #00ff41;
+            min-height: 100vh;
+            line-height: 1.4;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header {
+            border-bottom: 2px solid #00ff41;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .header h1 {
+            font-size: 24px;
+            color: #00ff41;
+            text-shadow: 0 0 10px #00ff41;
+        }
+        
+        .back-link {
+            padding: 5px 10px;
+            background: #222;
+            border: 1px solid #444;
+            color: #00ff41;
+            text-decoration: none;
+            transition: all 0.2s;
+        }
+        
+        .back-link:hover {
+            background: #333;
+            border-color: #00ff41;
+            text-shadow: 0 0 5px #00ff41;
+        }
+        
+        .upload-area {
+            background: #111;
+            border: 2px dashed #333;
+            border-radius: 0;
+            padding: 60px 20px;
+            text-align: center;
+            margin-bottom: 20px;
+            transition: all 0.3s;
+            position: relative;
+        }
+        
+        .upload-area.dragover {
+            border-color: #00ff41;
+            background: #1a1a1a;
+            box-shadow: 0 0 20px rgba(0, 255, 65, 0.3);
+        }
+        
+        .upload-icon {
+            font-size: 48px;
+            margin-bottom: 20px;
+            display: block;
+        }
+        
+        .upload-text {
+            font-size: 18px;
+            margin-bottom: 20px;
+            color: #00ff41;
+        }
+        
+        .upload-subtext {
+            font-size: 14px;
+            color: #888;
+            margin-bottom: 20px;
+        }
+        
+        .file-input {
+            display: none;
+        }
+        
+        .browse-btn {
+            padding: 10px 20px;
+            background: #333;
+            border: 1px solid #555;
+            color: #00ff41;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-block;
+        }
+        
+        .browse-btn:hover {
+            background: #444;
+            border-color: #00ff41;
+            text-shadow: 0 0 5px #00ff41;
+        }
+        
+        .file-list {
+            background: #111;
+            border: 1px solid #333;
+            min-height: 200px;
+            margin-bottom: 20px;
+        }
+        
+        .file-item {
+            display: grid;
+            grid-template-columns: 1fr auto auto auto;
+            gap: 15px;
+            padding: 10px 15px;
+            border-bottom: 1px solid #222;
+            align-items: center;
+        }
+        
+        .file-name {
+            color: #00ff41;
+            word-break: break-all;
+        }
+        
+        .file-size {
+            color: #888;
+            font-size: 12px;
+        }
+        
+        .progress-bar {
+            width: 100px;
+            height: 6px;
+            background: #333;
+            border: 1px solid #555;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: #00ff41;
+            width: 0%;
+            transition: width 0.3s;
+        }
+        
+        .status {
+            color: #888;
+            font-size: 12px;
+            min-width: 60px;
+        }
+        
+        .status.complete {
+            color: #00ff41;
+        }
+        
+        .status.error {
+            color: #ff4444;
+        }
+        
+        .remove-btn {
+            background: none;
+            border: none;
+            color: #ff4444;
+            cursor: pointer;
+            padding: 2px 5px;
+            font-family: inherit;
+        }
+        
+        .remove-btn:hover {
+            text-shadow: 0 0 3px #ff4444;
+        }
+        
+        .upload-controls {
+            text-align: center;
+            margin-top: 20px;
+        }
+        
+        .upload-btn {
+            padding: 12px 30px;
+            background: #333;
+            border: 1px solid #555;
+            color: #00ff41;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 16px;
+            transition: all 0.2s;
+            margin-right: 10px;
+        }
+        
+        .upload-btn:hover:not(:disabled) {
+            background: #444;
+            border-color: #00ff41;
+            text-shadow: 0 0 5px #00ff41;
+        }
+        
+        .upload-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .clear-btn {
+            background: #444;
+            color: #ff4444;
+        }
+        
+        .clear-btn:hover {
+            border-color: #ff4444;
+            text-shadow: 0 0 3px #ff4444;
+        }
+        
+        .info-box {
+            background: #222;
+            border: 1px solid #444;
+            padding: 15px;
+            margin-top: 20px;
+            font-size: 12px;
+            color: #888;
+        }
+        
+        .info-box h3 {
+            color: #00ff41;
+            margin-bottom: 10px;
+        }
+        
+        .empty-state {
+            text-align: center;
+            color: #555;
+            padding: 40px;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>█ PORTAL UPLOAD</h1>
+            <a href="/" class="back-link">← BROWSER</a>
+        </div>
+        
+        <div class="upload-area" id="uploadArea">
+            <div class="upload-icon">📁</div>
+            <div class="upload-text">Drop files here to upload</div>
+            <div class="upload-subtext">or</div>
+            <label for="fileInput" class="browse-btn">BROWSE FILES</label>
+            <input type="file" id="fileInput" class="file-input" multiple>
+        </div>
+        
+        <div class="file-list" id="fileList">
+            <div class="empty-state" id="emptyState">
+                No files selected
+            </div>
+        </div>
+        
+        <div class="upload-controls">
+            <button class="upload-btn" id="uploadBtn" disabled>UPLOAD ALL</button>
+            <button class="upload-btn clear-btn" id="clearBtn">CLEAR ALL</button>
+        </div>
+        
+        <div class="info-box">
+            <h3>UPLOAD INFO</h3>
+            <p>• Files are uploaded to /home/server/portal/dump/</p>
+            <p>• Large files are chunked into 4 parts for parallel upload</p>
+            <p>• Server admin will manually sort uploaded files</p>
+            <p>• Maximum file size: 10GB</p>
+        </div>
+    </div>
+
+    <script>
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const fileList = document.getElementById('fileList');
+        const emptyState = document.getElementById('emptyState');
+        const uploadBtn = document.getElementById('uploadBtn');
+        const clearBtn = document.getElementById('clearBtn');
+        
+        let selectedFiles = new Map();
+        let uploading = false;
+        
+        // Drag and drop handlers
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            uploadArea.addEventListener(eventName, preventDefaults, false);
+        });
+        
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+        
+        ['dragenter', 'dragover'].forEach(eventName => {
+            uploadArea.addEventListener(eventName, () => uploadArea.classList.add('dragover'));
+        });
+        
+        ['dragleave', 'drop'].forEach(eventName => {
+            uploadArea.addEventListener(eventName, () => uploadArea.classList.remove('dragover'));
+        });
+        
+        uploadArea.addEventListener('drop', handleDrop);
+        fileInput.addEventListener('change', handleFileSelect);
+        uploadBtn.addEventListener('click', uploadAllFiles);
+        clearBtn.addEventListener('click', clearAllFiles);
+        
+        function handleDrop(e) {
+            const files = Array.from(e.dataTransfer.files);
+            addFiles(files);
+        }
+        
+        function handleFileSelect(e) {
+            const files = Array.from(e.target.files);
+            addFiles(files);
+        }
+        
+        function addFiles(files) {
+            files.forEach(file => {
+                const fileId = Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+                selectedFiles.set(fileId, {
+                    file: file,
+                    status: 'ready',
+                    progress: 0
+                });
+            });
+            updateFileList();
+            updateUploadButton();
+        }
+        
+        function updateFileList() {
+            if (selectedFiles.size === 0) {
+                emptyState.style.display = 'block';
+                return;
+            }
+            
+            emptyState.style.display = 'none';
+            
+            const html = Array.from(selectedFiles.entries()).map(([fileId, fileData]) => {
+                const sizeText = formatFileSize(fileData.file.size);
+                return `
+                    <div class="file-item">
+                        <div class="file-name">${fileData.file.name}</div>
+                        <div class="file-size">${sizeText}</div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: ${fileData.progress}%"></div>
+                        </div>
+                        <div class="status ${fileData.status}">${getStatusText(fileData.status)}</div>
+                        ${fileData.status === 'ready' ? `<button class="remove-btn" onclick="removeFile('${fileId}')">✕</button>` : ''}
+                    </div>
+                `;
+            }).join('');
+            
+            fileList.innerHTML = html;
+        }
+        
+        function formatFileSize(bytes) {
+            if (bytes < 1024) return bytes + 'B';
+            if (bytes < 1048576) return (bytes / 1024).toFixed(1) + 'K';
+            if (bytes < 1073741824) return (bytes / 1048576).toFixed(1) + 'M';
+            return (bytes / 1073741824).toFixed(1) + 'G';
+        }
+        
+        function getStatusText(status) {
+            switch(status) {
+                case 'ready': return 'Ready';
+                case 'uploading': return 'Uploading...';
+                case 'complete': return 'Complete';
+                case 'error': return 'Error';
+                default: return status;
+            }
+        }
+        
+        function removeFile(fileId) {
+            if (uploading) return;
+            selectedFiles.delete(fileId);
+            updateFileList();
+            updateUploadButton();
+        }
+        
+        function clearAllFiles() {
+            if (uploading) return;
+            selectedFiles.clear();
+            updateFileList();
+            updateUploadButton();
+        }
+        
+        function updateUploadButton() {
+            uploadBtn.disabled = selectedFiles.size === 0 || uploading;
+        }
+        
+        async function uploadAllFiles() {
+            if (uploading || selectedFiles.size === 0) return;
+            
+            uploading = true;
+            updateUploadButton();
+            
+            const uploadPromises = Array.from(selectedFiles.entries()).map(([fileId, fileData]) => {
+                return uploadFile(fileId, fileData);
+            });
+            
+            await Promise.all(uploadPromises);
+            
+            uploading = false;
+            updateUploadButton();
+        }
+        
+        async function uploadFile(fileId, fileData) {
+            const file = fileData.file;
+            
+            try {
+                selectedFiles.get(fileId).status = 'uploading';
+                updateFileList();
+                
+                // Start upload session
+                const sessionResponse = await fetch('/start_upload', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        filename: file.name,
+                        filesize: file.size
+                    })
+                });
+                
+                const sessionData = await sessionResponse.json();
+                const sessionId = sessionData.session_id;
+                
+                // Split file into 4 chunks
+                const chunkSize = Math.ceil(file.size / 4);
+                const chunks = [];
+                
+                for (let i = 0; i < 4; i++) {
+                    const start = i * chunkSize;
+                    const end = Math.min(start + chunkSize, file.size);
+                    chunks.push(file.slice(start, end));
+                }
+                
+                // Upload chunks in parallel
+                const uploadPromises = chunks.map((chunk, index) => {
+                    const formData = new FormData();
+                    formData.append('session_id', sessionId);
+                    formData.append('chunk_num', index);
+                    formData.append('chunk', chunk);
+                    
+                    return fetch('/upload_chunk', {
+                        method: 'POST',
+                        body: formData
+                    });
+                });
+                
+                const results = await Promise.all(uploadPromises);
+                
+                // Check if all chunks uploaded successfully
+                const allSuccess = results.every(r => r.ok);
+                
+                if (allSuccess) {
+                    selectedFiles.get(fileId).status = 'complete';
+                    selectedFiles.get(fileId).progress = 100;
+                } else {
+                    selectedFiles.get(fileId).status = 'error';
+                }
+                
+            } catch (error) {
+                console.error('Upload error:', error);
+                selectedFiles.get(fileId).status = 'error';
+            }
+            
+            updateFileList();
+        }
+        
+        window.removeFile = removeFile;
+    </script>
+</body>
+</html>

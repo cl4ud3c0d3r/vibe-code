@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portal File Browser</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Courier New', monospace;
+            background: #0a0a0a;
+            color: #00ff41;
+            min-height: 100vh;
+            line-height: 1.4;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header {
+            border-bottom: 2px solid #00ff41;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .header h1 {
+            font-size: 24px;
+            color: #00ff41;
+            text-shadow: 0 0 10px #00ff41;
+        }
+        
+        .nav-bar {
+            background: #111;
+            border: 1px solid #333;
+            padding: 10px;
+            margin-bottom: 20px;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        
+        .breadcrumb {
+            color: #888;
+        }
+        
+        .breadcrumb a {
+            color: #00ff41;
+            text-decoration: none;
+        }
+        
+        .breadcrumb a:hover {
+            text-shadow: 0 0 5px #00ff41;
+        }
+        
+        .upload-link {
+            margin-left: auto;
+            padding: 5px 10px;
+            background: #222;
+            border: 1px solid #444;
+            color: #00ff41;
+            text-decoration: none;
+            transition: all 0.2s;
+        }
+        
+        .upload-link:hover {
+            background: #333;
+            border-color: #00ff41;
+            text-shadow: 0 0 5px #00ff41;
+        }
+        
+        .file-list {
+            background: #111;
+            border: 1px solid #333;
+            min-height: 400px;
+        }
+        
+        .file-item {
+            display: grid;
+            grid-template-columns: auto 1fr auto auto auto;
+            gap: 15px;
+            padding: 8px 15px;
+            border-bottom: 1px solid #222;
+            align-items: center;
+            transition: background 0.1s;
+        }
+        
+        .file-item:hover {
+            background: #1a1a1a;
+        }
+        
+        .file-icon {
+            font-size: 16px;
+            width: 20px;
+        }
+        
+        .file-name {
+            text-align: left;
+        }
+        
+        .file-name a {
+            color: #00ff41;
+            text-decoration: none;
+        }
+        
+        .file-name a:hover {
+            text-shadow: 0 0 5px #00ff41;
+        }
+        
+        .folder-name a {
+            color: #ffff00;
+        }
+        
+        .folder-name a:hover {
+            text-shadow: 0 0 5px #ffff00;
+        }
+        
+        .file-size, .file-date {
+            color: #888;
+            font-size: 12px;
+            text-align: right;
+        }
+        
+        .download-btn {
+            padding: 3px 8px;
+            background: #333;
+            border: 1px solid #555;
+            color: #00ff41;
+            text-decoration: none;
+            font-size: 11px;
+            transition: all 0.2s;
+        }
+        
+        .download-btn:hover {
+            background: #444;
+            border-color: #00ff41;
+            text-shadow: 0 0 3px #00ff41;
+        }
+        
+        .zip-btn {
+            color: #ff9900;
+        }
+        
+        .zip-btn:hover {
+            border-color: #ff9900;
+            text-shadow: 0 0 3px #ff9900;
+        }
+        
+        .empty-state {
+            text-align: center;
+            color: #555;
+            padding: 40px;
+            font-style: italic;
+        }
+        
+        .footer {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #333;
+            text-align: center;
+            color: #555;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>█ PORTAL FILE BROWSER</h1>
+        </div>
+        
+        <div class="nav-bar">
+            <div class="breadcrumb">
+                <a href="/">~/server</a>
+                {% for crumb in breadcrumbs %}
+                    / <a href="/?path={{ crumb.path }}">{{ crumb.name }}</a>
+                {% endfor %}
+            </div>
+            <a href="/uploads" class="upload-link">UPLOAD</a>
+        </div>
+        
+        <div class="file-list">
+            {% if current_path %}
+                <div class="file-item">
+                    <div class="file-icon">📁</div>
+                    <div class="file-name folder-name">
+                        <a href="/?path={{ current_path.rsplit('/', 1)[0] if '/' in current_path else '' }}">../</a>
+                    </div>
+                    <div class="file-size"></div>
+                    <div class="file-date"></div>
+                    <div></div>
+                </div>
+            {% endif %}
+            
+            {% for item in items %}
+                <div class="file-item">
+                    <div class="file-icon">
+                        {% if item.is_dir %}📁{% else %}📄{% endif %}
+                    </div>
+                    <div class="file-name {% if item.is_dir %}folder-name{% endif %}">
+                        {% if item.is_dir %}
+                            <a href="/?path={{ item.path }}">{{ item.name }}/</a>
+                        {% else %}
+                            {{ item.name }}
+                        {% endif %}
+                    </div>
+                    <div class="file-size">
+                        {% if not item.is_dir %}
+                            {% set size_kb = (item.size / 1024) | round(1) %}
+                            {% set size_mb = (item.size / 1048576) | round(1) %}
+                            {% set size_gb = (item.size / 1073741824) | round(1) %}
+                            {% if item.size < 1024 %}
+                                {{ item.size }}B
+                            {% elif item.size < 1048576 %}
+                                {{ size_kb }}K
+                            {% elif item.size < 1073741824 %}
+                                {{ size_mb }}M
+                            {% else %}
+                                {{ size_gb }}G
+                            {% endif %}
+                        {% endif %}
+                    </div>
+                    <div class="file-date">
+                        {{ item.modified | int | timestamp_to_date }}
+                    </div>
+                    <div>
+                        {% if item.is_dir %}
+                            <a href="/download_zip/{{ item.path }}" class="download-btn zip-btn">ZIP</a>
+                        {% else %}
+                            <a href="/download/{{ item.path }}" class="download-btn">DL</a>
+                        {% endif %}
+                    </div>
+                </div>
+            {% endfor %}
+            
+            {% if not items %}
+                <div class="empty-state">
+                    Directory is empty
+                </div>
+            {% endif %}
+        </div>
+        
+        <div class="footer">
+            Portal v1.0 | Terminal File Browser
+        </div>
+    </div>
+</body>
+</html>
